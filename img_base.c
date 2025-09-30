@@ -291,157 +291,6 @@ void ajustarBrilloConcurrente(ImagenInfo *info, int delta)
            info->canales == 1 ? "grises" : "RGB");
 }
 
-// QUÉ: Mostrar el menú interactivo.
-// CÓMO: Imprime opciones y espera entrada del usuario.
-// POR QUÉ: Proporciona una interfaz simple para interactuar con el programa.
-void mostrarMenu()
-{
-    printf("\n--- Plataforma de Edición de Imágenes ---\n");
-    printf("1. Cargar imagen PNG\n2. Mostrar matriz de píxeles\n3. Guardar como PNG\n4. Ajustar brillo concurrente\n5. Convolución Gaussiana\n6. Detección de bordes (Sobel)\n7. Rotar imagen\n8. Redimensionar\n9. Salir\nOpción: ");
-}
-
-// QUÉ: Función principal que controla el flujo del programa.
-// CÓMO: Maneja entrada CLI, ejecuta el menú en bucle y llama funciones según opción.
-// POR QUÉ: Centraliza la lógica y asegura limpieza al salir.
-int main(int argc, char *argv[])
-{
-    ImagenInfo imagen = {0, 0, 0, NULL}; // Inicializar estructura
-    char ruta[256] = {0};                // Buffer para ruta de archivo
-
-    // QUÉ: Cargar imagen desde CLI si se pasa.
-    // CÓMO: Copia argv[1] y llama cargarImagen.
-    // POR QUÉ: Permite ejecución directa con ./img imagen.png.
-    if (argc > 1)
-    {
-        strncpy(ruta, argv[1], sizeof(ruta) - 1);
-        if (!cargarImagen(ruta, &imagen))
-        {
-            return EXIT_FAILURE;
-        }
-    }
-
-    int opcion;
-    while (1)
-    {
-        mostrarMenu();
-        // QUÉ: Leer opción del usuario.
-        // CÓMO: Usa scanf y limpia el buffer para evitar bucles infinitos.
-        // POR QUÉ: Manejo robusto de entrada evita errores comunes.
-        if (scanf("%d", &opcion) != 1)
-        {
-            while (getchar() != '\n')
-                ;
-            printf("Entrada inválida.\n");
-            continue;
-        }
-        while (getchar() != '\n')
-            ; // Limpiar buffer
-
-        switch (opcion)
-        {
-        case 1:
-        { // Cargar imagen
-            printf("Ingresa la ruta del archivo PNG: ");
-            if (fgets(ruta, sizeof(ruta), stdin) == NULL)
-            {
-                printf("Error al leer ruta.\n");
-                continue;
-            }
-            ruta[strcspn(ruta, "\n")] = 0; // Eliminar salto de línea
-            liberarImagen(&imagen);        // Liberar imagen previa
-            if (!cargarImagen(ruta, &imagen))
-            {
-                continue;
-            }
-            break;
-        }
-        case 2: // Mostrar matriz
-            mostrarMatriz(&imagen);
-            break;
-        case 3:
-        { // Guardar PNG
-            char salida[256];
-            printf("Nombre del archivo PNG de salida: ");
-            if (fgets(salida, sizeof(salida), stdin) == NULL)
-            {
-                printf("Error al leer ruta.\n");
-                continue;
-            }
-            salida[strcspn(salida, "\n")] = 0;
-            guardarPNG(&imagen, salida);
-            break;
-        }
-        case 4:
-        { // Ajustar brillo
-            int delta;
-            printf("Valor de ajuste de brillo (+ para más claro, - para más oscuro): ");
-            if (scanf("%d", &delta) != 1)
-            {
-                while (getchar() != '\n')
-                    ;
-                printf("Entrada inválida.\n");
-                continue;
-            }
-            while (getchar() != '\n')
-                ;
-            ajustarBrilloConcurrente(&imagen, delta);
-            break;
-        }
-        case 5:
-        {
-            int k, h;
-            float sigma;
-            scanf("%d", &k);
-            scanf("%f", &sigma);
-            scanf("%d", &h);
-            while (getchar() != '\n')
-                ;
-            aplicarConvolucionGaussiana(&imagen, k, sigma, h);
-            break;
-        }
-        case 6:
-        {
-            int h;
-            scanf("%d", &h);
-            while (getchar() != '\n')
-                ;
-            aplicarSobel(&imagen, h);
-            break;
-        }
-        case 7:
-        {
-            float ang;
-            int h;
-            scanf("%f", &ang);
-            scanf("%d", &h);
-            while (getchar() != '\n')
-                ;
-            rotarImagen(&imagen, ang, h);
-            break;
-        }
-        case 8:
-        {
-            int nw, nh, h;
-            scanf("%d", &nw);
-            scanf("%d", &nh);
-            scanf("%d", &h);
-            while (getchar() != '\n')
-                ;
-            redimensionarBilineal(&imagen, nw, nh, h);
-            break;
-        }
-        case 9: // Salir
-            liberarImagen(&imagen);
-            printf("¡Adiós!\n");
-            return EXIT_SUCCESS;
-        default:
-            printf("Opción inválida.\n");
-        }
-    }
-    liberarImagen(&imagen);
-    return EXIT_SUCCESS;
-}
-
 static inline unsigned char clampU8(int v)
 {
     return (unsigned char)(v < 0 ? 0 : (v > 255 ? 255 : v));
@@ -763,4 +612,220 @@ void redimensionarBilineal(ImagenInfo *info, int Wn, int Hn, int nh)
     info->pixeles = dst;
     info->ancho = Wn;
     info->alto = Hn;
+}
+
+// QUÉ: Mostrar el menú interactivo.
+// CÓMO: Imprime opciones y espera entrada del usuario.
+// POR QUÉ: Proporciona una interfaz simple para interactuar con el programa.
+void mostrarMenu()
+{
+    printf("\n--- Plataforma de Edición de Imágenes ---\n");
+    printf("1. Cargar imagen PNG\n2. Mostrar matriz de píxeles\n3. Guardar como PNG\n4. Ajustar brillo concurrente\n5. Convolución Gaussiana\n6. Detección de bordes (Sobel)\n7. Rotar imagen\n8. Redimensionar\n9. Salir\nOpción: ");
+}
+
+// QUÉ: Función principal que controla el flujo del programa.
+// CÓMO: Maneja entrada CLI, ejecuta el menú en bucle y llama funciones según opción.
+// POR QUÉ: Centraliza la lógica y asegura limpieza al salir.
+int main(int argc, char *argv[])
+{
+    ImagenInfo imagen = {0, 0, 0, NULL}; // Inicializar estructura
+    char ruta[256] = {0};                // Buffer para ruta de archivo
+
+    // QUÉ: Cargar imagen desde CLI si se pasa.
+    // CÓMO: Copia argv[1] y llama cargarImagen.
+    // POR QUÉ: Permite ejecución directa con ./img imagen.png.
+    if (argc > 1)
+    {
+        strncpy(ruta, argv[1], sizeof(ruta) - 1);
+        if (!cargarImagen(ruta, &imagen))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
+    int opcion;
+    while (1)
+    {
+        mostrarMenu();
+        // QUÉ: Leer opción del usuario.
+        // CÓMO: Usa scanf y limpia el buffer para evitar bucles infinitos.
+        // POR QUÉ: Manejo robusto de entrada evita errores comunes.
+        if (scanf("%d", &opcion) != 1)
+        {
+            while (getchar() != '\n')
+                ;
+            printf("Entrada inválida.\n");
+            continue;
+        }
+        while (getchar() != '\n')
+            ; // Limpiar buffer
+
+        switch (opcion)
+        {
+        case 1:
+        { // Cargar imagen
+            printf("Ingresa la ruta del archivo PNG: ");
+            if (fgets(ruta, sizeof(ruta), stdin) == NULL)
+            {
+                printf("Error al leer ruta.\n");
+                continue;
+            }
+            ruta[strcspn(ruta, "\n")] = 0; // Eliminar salto de línea
+            liberarImagen(&imagen);        // Liberar imagen previa
+            if (!cargarImagen(ruta, &imagen))
+            {
+                continue;
+            }
+            break;
+        }
+        case 2: // Mostrar matriz
+            mostrarMatriz(&imagen);
+            break;
+        case 3:
+        { // Guardar PNG
+            char salida[256];
+            printf("Nombre del archivo PNG de salida: ");
+            if (fgets(salida, sizeof(salida), stdin) == NULL)
+            {
+                printf("Error al leer ruta.\n");
+                continue;
+            }
+            salida[strcspn(salida, "\n")] = 0;
+            guardarPNG(&imagen, salida);
+            break;
+        }
+        case 4:
+        { // Ajustar brillo
+            int delta;
+            printf("Valor de ajuste de brillo (+ para más claro, - para más oscuro): ");
+            if (scanf("%d", &delta) != 1)
+            {
+                while (getchar() != '\n')
+                    ;
+                printf("Entrada inválida.\n");
+                continue;
+            }
+            while (getchar() != '\n')
+                ;
+            ajustarBrilloConcurrente(&imagen, delta);
+            break;
+        }
+        case 5:
+        {
+            int k, h;
+            float sigma;
+            printf("Tamaño del kernel (impar > 0): ");
+            if (scanf("%d", &k) != 1)
+            {
+                while (getchar() != '\n')
+                    ;
+                printf("Entrada inválida.\n");
+                continue;
+            }
+            printf("Valor de sigma (decimal): ");
+            if (scanf("%f", &sigma) != 1)
+            {
+                while (getchar() != '\n')
+                    ;
+                printf("Entrada inválida.\n");
+                continue;
+            }
+            printf("Número de hilos: ");
+            if (scanf("%d", &h) != 1)
+            {
+                while (getchar() != '\n')
+                    ;
+                printf("Entrada inválida.\n");
+                continue;
+            }
+            while (getchar() != '\n')
+                ;
+            aplicarConvolucionGaussiana(&imagen, k, sigma, h);
+            break;
+        }
+        case 6:
+        {
+            int h;
+            printf("Número de hilos para Sobel: ");
+            if (scanf("%d", &h) != 1)
+            {
+                while (getchar() != '\n')
+                    ;
+                printf("Entrada inválida.\n");
+                continue;
+            }
+            while (getchar() != '\n')
+                ;
+            aplicarSobel(&imagen, h);
+            break;
+        }
+        case 7:
+        {
+            float ang;
+            int h;
+            printf("Ángulo de rotación (grados): ");
+            if (scanf("%f", &ang) != 1)
+            {
+                while (getchar() != '\n')
+                    ;
+                printf("Entrada inválida.\n");
+                continue;
+            }
+            printf("Número de hilos para rotación: ");
+            if (scanf("%d", &h) != 1)
+            {
+                while (getchar() != '\n')
+                    ;
+                printf("Entrada inválida.\n");
+                continue;
+            }
+            while (getchar() != '\n')
+                ;
+            rotarImagen(&imagen, ang, h);
+            break;
+        }
+        case 8:
+        {
+            int nw, nh, h;
+            printf("Ancho nuevo: ");
+            if (scanf("%d", &nw) != 1)
+            {
+                while (getchar() != '\n')
+                    ;
+                printf("Entrada inválida.\n");
+                continue;
+            }
+            printf("Alto nuevo: ");
+            if (scanf("%d", &nh) != 1)
+            {
+                while (getchar() != '\n')
+                    ;
+                printf("Entrada inválida.\n");
+                continue;
+            }
+            printf("Número de hilos para redimensionar: ");
+            if (scanf("%d", &h) != 1)
+            {
+                while (getchar() != '\n')
+                    ;
+                printf("Entrada inválida.\n");
+                continue;
+            }
+            while (getchar() != '\n')
+                ;
+            redimensionarBilineal(&imagen, nw, nh, h);
+            break;
+        }
+        case 9: // Salir
+        {
+            liberarImagen(&imagen);
+            printf("¡Adiós!\n");
+            return EXIT_SUCCESS;
+        }
+        default:
+            printf("Opción inválida.\n");
+        }
+    }
+    liberarImagen(&imagen);
+    return EXIT_SUCCESS;
 }
